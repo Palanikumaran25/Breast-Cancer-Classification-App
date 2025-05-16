@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
@@ -107,11 +107,14 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown("**Confusion Matrix**")
     cm = confusion_matrix(y_test, y_pred)
-    fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
-    plt.ylabel("Actual")
-    plt.xlabel("Predicted")
-    st.pyplot(fig)
+    fig = px.imshow(cm,
+                    labels=dict(x="Predicted", y="Actual", color="Count"),
+                    x=labels,
+                    y=labels,
+                    text_auto=True,
+                    color_continuous_scale='Blues')
+    fig.update_layout(title="Confusion Matrix")
+    st.plotly_chart(fig, use_container_width=True)
 
 with col2:
     st.markdown("**Classification Report**")
@@ -125,14 +128,22 @@ if y_proba is not None:
     st.markdown("**ROC Curve**")
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     roc_auc = roc_auc_score(y_test, y_proba)
-    fig2, ax2 = plt.subplots()
-    ax2.plot(fpr, tpr, color='darkorange', lw=2, label=f"AUC = {roc_auc:.2f}")
-    ax2.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    ax2.set_xlabel('False Positive Rate')
-    ax2.set_ylabel('True Positive Rate')
-    ax2.set_title('Receiver Operating Characteristic')
-    ax2.legend(loc="lower right")
-    st.pyplot(fig2)
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=fpr, y=tpr,
+                            mode='lines',
+                            name=f'ROC curve (AUC = {roc_auc:.2f})'))
+    fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1],
+                            mode='lines',
+                            name='Random',
+                            line=dict(dash='dash')))
+    
+    fig.update_layout(title='Receiver Operating Characteristic',
+                     xaxis_title='False Positive Rate',
+                     yaxis_title='True Positive Rate',
+                     showlegend=True)
+    
+    st.plotly_chart(fig, use_container_width=True)
 else:
     st.warning("Selected model does not support ROC curve.") 
     
